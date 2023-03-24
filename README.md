@@ -1,2 +1,2 @@
 # massa-wallet-provider-content-script
-A WIP massa-wallet-provider-content-script library
+A **WIP** massa-wallet-provider-content-script library
