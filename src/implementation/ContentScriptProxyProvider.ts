@@ -171,6 +171,10 @@ export abstract class ContentScriptProxyProvider {
     console.log('[PLUGIN_INJECTED] DOCUMENT READY...0 ', document.readyState);
     return new Promise((resolve) => {
       const registerProvider = () => {
+        if (!window.massaWalletProvider) {
+          console.error('window.massaWalletProvider not available...');
+        }
+
         // answer to the register target
         window.massaWalletProvider.dispatchEvent(
           new CustomEvent('register', {
