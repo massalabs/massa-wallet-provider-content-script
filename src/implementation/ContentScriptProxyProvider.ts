@@ -73,7 +73,7 @@ export abstract class ContentScriptProxyProvider {
       ] as EventTarget
     ).addEventListener(AvailableCommands.AccountBalance, (evt: CustomEvent) => {
       const payload: ICustomEventMessageRequest = evt.detail;
-      this.actionToCallback.get(AvailableCommands.AccountSign)(payload);
+      this.actionToCallback.get(AvailableCommands.AccountBalance)(payload);
     });
 
     this.attachCallbackHandler(
@@ -96,6 +96,19 @@ export abstract class ContentScriptProxyProvider {
       },
     );
     // ================================================================
+    (
+      window[
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+      ] as EventTarget
+    ).addEventListener(
+      AvailableCommands.ProviderDeleteAccount,
+      (evt: CustomEvent) => {
+        const payload: ICustomEventMessageRequest = evt.detail;
+        this.actionToCallback.get(AvailableCommands.ProviderDeleteAccount)(
+          payload,
+        );
+      },
+    );
 
     this.attachCallbackHandler(
       AvailableCommands.ProviderDeleteAccount,
@@ -107,7 +120,7 @@ export abstract class ContentScriptProxyProvider {
           accountDeletionPayload,
         );
         const respMessage = {
-          response: {
+          result: {
             response: EAccountDeletionResponse.OK,
           } as IAccountDeletionResponse,
           error: null,
@@ -120,13 +133,28 @@ export abstract class ContentScriptProxyProvider {
       },
     );
 
+    // ================================================================
+    (
+      window[
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+      ] as EventTarget
+    ).addEventListener(
+      AvailableCommands.ProviderImportAccount,
+      (evt: CustomEvent) => {
+        const payload: ICustomEventMessageRequest = evt.detail;
+        this.actionToCallback.get(AvailableCommands.ProviderImportAccount)(
+          payload,
+        );
+      },
+    );
+
     this.attachCallbackHandler(
       AvailableCommands.ProviderImportAccount,
       (payload: ICustomEventMessageRequest) => {
         const accountImportPayload = payload.params as IAccountImportRequest;
         console.log('Provider importing account payload', accountImportPayload);
         const respMessage = {
-          response: {
+          result: {
             response: EAccountImportResponse.OK,
             message: 'Import was fine',
           } as IAccountImportResponse,
@@ -139,13 +167,26 @@ export abstract class ContentScriptProxyProvider {
         );
       },
     );
+    // ================================================================
+    (
+      window[
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+      ] as EventTarget
+    ).addEventListener(
+      AvailableCommands.ProviderListAccounts,
+      (evt: CustomEvent) => {
+        const payload: ICustomEventMessageRequest = evt.detail;
+        this.actionToCallback.get(AvailableCommands.ProviderListAccounts)(
+          payload,
+        );
+      },
+    );
 
     this.attachCallbackHandler(
       AvailableCommands.ProviderListAccounts,
       (payload: ICustomEventMessageRequest) => {
-        console.log('Provider listing accounts payload');
         const respMessage = {
-          response: [{ name: 'my account', address: '0x0' } as IAccount],
+          result: [{ name: 'my account', address: '0x0' } as IAccount],
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
@@ -168,11 +209,10 @@ export abstract class ContentScriptProxyProvider {
   public static registerAsMassaWalletProvider(
     providerName: string,
   ): Promise<boolean> {
-    console.log('[PLUGIN_INJECTED] DOCUMENT READY...0 ', document.readyState);
     return new Promise((resolve) => {
       const registerProvider = () => {
         if (!window.massaWalletProvider) {
-          console.error('window.massaWalletProvider not available...');
+          return resolve(false);
         }
 
         // answer to the register target
@@ -187,7 +227,6 @@ export abstract class ContentScriptProxyProvider {
         return resolve(true);
       };
 
-      console.log('[PLUGIN_INJECTED] DOCUMENT READY...', document.readyState);
       if (
         document.readyState === 'complete' ||
         document.readyState === 'interactive'
