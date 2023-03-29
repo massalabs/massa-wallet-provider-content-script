@@ -50,7 +50,6 @@ export abstract class ContentScriptProxyProvider {
       AvailableCommands.AccountSign,
       (payload: ICustomEventMessageRequest) => {
         const accountSignPayload = payload.params as IAccountSignRequest;
-        console.log('Account signing the payload', accountSignPayload);
         const respMessage = {
           result: {
             pubKey: '0x0000',
@@ -80,10 +79,6 @@ export abstract class ContentScriptProxyProvider {
       AvailableCommands.AccountBalance,
       (payload: ICustomEventMessageRequest) => {
         const accountBalancePayload = payload.params as IAccountBalanceRequest;
-        console.log(
-          'Getting account balance using the payload',
-          accountBalancePayload,
-        );
         const respMessage = {
           result: { balance: '120' } as IAccountBalanceResponse,
           error: null,
@@ -152,7 +147,6 @@ export abstract class ContentScriptProxyProvider {
       AvailableCommands.ProviderImportAccount,
       (payload: ICustomEventMessageRequest) => {
         const accountImportPayload = payload.params as IAccountImportRequest;
-        console.log('Provider importing account payload', accountImportPayload);
         const respMessage = {
           result: {
             response: EAccountImportResponse.OK,
@@ -231,7 +225,6 @@ export abstract class ContentScriptProxyProvider {
         document.readyState === 'complete' ||
         document.readyState === 'interactive'
       ) {
-        console.log('[PLUGIN_INJECTED] DOCUMENT READY!');
         registerProvider();
       } else {
         console.log('[PLUGIN_INJECTED] DOCUMENT READY EVENT LISTENER ATTACHED');
