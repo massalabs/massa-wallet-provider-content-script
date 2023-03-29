@@ -1,4 +1,1 @@
-export {
-  ContentScriptProxyProvider,
-  MyWalletProvider,
-} from './ContentScriptProxyProvider';
+export { ContentScriptProvider } from './ContentScriptProvider';

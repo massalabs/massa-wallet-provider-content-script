@@ -3,13 +3,11 @@ import {
   IAccountBalanceRequest,
   IAccountBalanceResponse,
   IAccountSignRequest,
-  EAccountDeletionResponse,
   IAccountSignResponse,
   IAccountDeletionRequest,
   IAccountDeletionResponse,
   IAccountImportRequest,
   IAccountImportResponse,
-  EAccountImportResponse,
 } from '../operations';
 import {
   ICustomEventMessageRequest,
@@ -24,21 +22,32 @@ type CallbackFunction = (evt: ICustomEventMessageRequest) => void;
 
 // =========================================================
 
-export abstract class ContentScriptProxyProvider {
-  private providerName: string;
+export abstract class ContentScriptProvider {
+  private static providerName: string;
   private actionToCallback: Map<string, CallbackFunction>;
 
-  public constructor(providerName: string) {
-    this.providerName = providerName;
+  public abstract sign(payload: IAccountSignRequest): IAccountSignResponse;
+  public abstract balance(
+    payload: IAccountBalanceRequest,
+  ): IAccountBalanceResponse;
+  public abstract deleteAccount(
+    payload: IAccountDeletionRequest,
+  ): IAccountDeletionResponse;
+  public abstract importAccount(
+    payload: IAccountImportRequest,
+  ): IAccountImportResponse;
+  public abstract listAccounts(): IAccount[];
+
+  public constructor() {
     this.actionToCallback = new Map<string, CallbackFunction>();
 
     this.attachCallbackHandler = this.attachCallbackHandler.bind(this);
 
-    // ================================================================
+    // ======================SIGN===============================
     // and how the content script listen for commands
     (
       window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
       ] as EventTarget
     ).addEventListener(AvailableCommands.AccountSign, (evt: CustomEvent) => {
       const payload: ICustomEventMessageRequest = evt.detail;
@@ -51,10 +60,7 @@ export abstract class ContentScriptProxyProvider {
       (payload: ICustomEventMessageRequest) => {
         const accountSignPayload = payload.params as IAccountSignRequest;
         const respMessage = {
-          result: {
-            pubKey: '0x0000',
-            signature: Uint8Array.from([1, 2, 3]),
-          } as IAccountSignResponse,
+          result: this.sign(accountSignPayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
@@ -65,10 +71,10 @@ export abstract class ContentScriptProxyProvider {
       },
     );
 
-    // ================================================================
+    // ===========================BALANCE============================
     (
       window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
       ] as EventTarget
     ).addEventListener(AvailableCommands.AccountBalance, (evt: CustomEvent) => {
       const payload: ICustomEventMessageRequest = evt.detail;
@@ -80,7 +86,7 @@ export abstract class ContentScriptProxyProvider {
       (payload: ICustomEventMessageRequest) => {
         const accountBalancePayload = payload.params as IAccountBalanceRequest;
         const respMessage = {
-          result: { balance: '120' } as IAccountBalanceResponse,
+          result: this.balance(accountBalancePayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
@@ -90,10 +96,10 @@ export abstract class ContentScriptProxyProvider {
         );
       },
     );
-    // ================================================================
+    // ============================DELETE ACCOUNT============================
     (
       window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
       ] as EventTarget
     ).addEventListener(
       AvailableCommands.ProviderDeleteAccount,
@@ -115,9 +121,7 @@ export abstract class ContentScriptProxyProvider {
           accountDeletionPayload,
         );
         const respMessage = {
-          result: {
-            response: EAccountDeletionResponse.OK,
-          } as IAccountDeletionResponse,
+          result: this.deleteAccount(accountDeletionPayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
@@ -128,10 +132,10 @@ export abstract class ContentScriptProxyProvider {
       },
     );
 
-    // ================================================================
+    // =============================IMPORT ACCOUNT===================================
     (
       window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
       ] as EventTarget
     ).addEventListener(
       AvailableCommands.ProviderImportAccount,
@@ -148,10 +152,7 @@ export abstract class ContentScriptProxyProvider {
       (payload: ICustomEventMessageRequest) => {
         const accountImportPayload = payload.params as IAccountImportRequest;
         const respMessage = {
-          result: {
-            response: EAccountImportResponse.OK,
-            message: 'Import was fine',
-          } as IAccountImportResponse,
+          result: this.importAccount(accountImportPayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
@@ -161,10 +162,10 @@ export abstract class ContentScriptProxyProvider {
         );
       },
     );
-    // ================================================================
+    // ==============================LIST ACCOUNTS==================================
     (
       window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${this.providerName}`
+        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
       ] as EventTarget
     ).addEventListener(
       AvailableCommands.ProviderListAccounts,
@@ -180,7 +181,7 @@ export abstract class ContentScriptProxyProvider {
       AvailableCommands.ProviderListAccounts,
       (payload: ICustomEventMessageRequest) => {
         const respMessage = {
-          result: [{ name: 'my account', address: '0x0' } as IAccount],
+          result: this.listAccounts(),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
@@ -203,6 +204,7 @@ export abstract class ContentScriptProxyProvider {
   public static registerAsMassaWalletProvider(
     providerName: string,
   ): Promise<boolean> {
+    ContentScriptProvider.providerName = providerName;
     return new Promise((resolve) => {
       const registerProvider = () => {
         if (!window.massaWalletProvider) {
@@ -227,19 +229,8 @@ export abstract class ContentScriptProxyProvider {
       ) {
         registerProvider();
       } else {
-        console.log('[PLUGIN_INJECTED] DOCUMENT READY EVENT LISTENER ATTACHED');
         document.addEventListener('DOMContentLoaded', registerProvider);
       }
     });
-  }
-}
-
-export class MyWalletProvider extends ContentScriptProxyProvider {
-  // ..other wallet-specific members for the wallets internal implementation
-
-  constructor(providerName: string) {
-    super(providerName);
-
-    // ...other wallet-specific stuff
   }
 }
