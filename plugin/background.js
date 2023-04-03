@@ -36,7 +36,7 @@ class MassaSpaceWalletImpl {
           fromExtension = sender.envType === 'addon_child' && sender.id === browser.runtime.id;
 
       if (request.action === "getBalance") {
-        return {balance: "1234.5"}
+        return { balance: "1234.5"}
       } else {
         return undefined;
       }
@@ -58,8 +58,8 @@ if (IS_CHROME)
 }
 else
 {
-    console.log('[BACKGROUND_JS (NOT CHROME)] Received request to handle...');
     mybrowser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+      console.log('[BACKGROUND_JS (NOT CHROME)] Received request to handle...');
       return massaSpaceWallet.onMessage(request, sender, sendResponse);   
     });
 }

@@ -31,7 +31,8 @@
     {
       
       "matches": ["<all_urls>"],
-      "js": ["./lib/massa-wallet-provider-content-script.js", "./content_scripts/content-script.js"]
+      "js": ["./lib/massa-wallet-provider-content-script.js", "./content_scripts/content-script.js"],
+      "run_at": "document_idle"
     }
   ],
 

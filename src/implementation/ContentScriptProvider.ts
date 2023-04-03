@@ -16,7 +16,7 @@ import {
   IAccount,
 } from '../interfaces';
 
-const MASSA_WINDOW_OBJECT_PRAEFIX = 'massaWalletProvider';
+const MASSA_WINDOW_OBJECT = 'massaWalletProvider';
 
 type CallbackFunction = (evt: ICustomEventMessageRequest) => void;
 
@@ -40,15 +40,34 @@ export abstract class ContentScriptProvider {
 
   public constructor() {
     this.actionToCallback = new Map<string, CallbackFunction>();
-
     this.attachCallbackHandler = this.attachCallbackHandler.bind(this);
+
+    this.sign = this.sign.bind(this);
+    this.balance = this.balance.bind(this);
+    this.deleteAccount = this.deleteAccount.bind(this);
+    this.importAccount = this.importAccount.bind(this);
+    this.listAccounts = this.listAccounts.bind(this);
+
+    // this is the current provider html element
+    const providerEventTargetName = `${MASSA_WINDOW_OBJECT}_${ContentScriptProvider.providerName}`;
+    if (!document.getElementById(providerEventTargetName)) {
+      const inv = document.createElement('p');
+      inv.id = providerEventTargetName;
+      document.body.appendChild(inv);
+    }
+
+    const walletProviderEventTarget = document.getElementById(
+      MASSA_WINDOW_OBJECT,
+    ) as EventTarget;
+    if (!walletProviderEventTarget) {
+      throw new Error(`Wallet Provider Event Target html element with id ${MASSA_WINDOW_OBJECT} not created. 
+      Make sure your "massa-wallet-provider" is already initialized`);
+    }
 
     // ======================SIGN===============================
     // and how the content script listen for commands
     (
-      window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
-      ] as EventTarget
+      document.getElementById(providerEventTargetName) as EventTarget
     ).addEventListener(AvailableCommands.AccountSign, (evt: CustomEvent) => {
       const payload: ICustomEventMessageRequest = evt.detail;
       this.actionToCallback.get(AvailableCommands.AccountSign)(payload);
@@ -57,15 +76,15 @@ export abstract class ContentScriptProvider {
     // attach handlers for various methods
     this.attachCallbackHandler(
       AvailableCommands.AccountSign,
-      (payload: ICustomEventMessageRequest) => {
+      async (payload: ICustomEventMessageRequest) => {
         const accountSignPayload = payload.params as IAccountSignRequest;
         const respMessage = {
-          result: this.sign(accountSignPayload),
+          result: await this.sign(accountSignPayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
         // answer to the message target
-        (window.massaWalletProvider as EventTarget).dispatchEvent(
+        walletProviderEventTarget.dispatchEvent(
           new CustomEvent('message', { detail: respMessage }),
         );
       },
@@ -73,9 +92,7 @@ export abstract class ContentScriptProvider {
 
     // ===========================BALANCE============================
     (
-      window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
-      ] as EventTarget
+      document.getElementById(providerEventTargetName) as EventTarget
     ).addEventListener(AvailableCommands.AccountBalance, (evt: CustomEvent) => {
       const payload: ICustomEventMessageRequest = evt.detail;
       this.actionToCallback.get(AvailableCommands.AccountBalance)(payload);
@@ -83,24 +100,22 @@ export abstract class ContentScriptProvider {
 
     this.attachCallbackHandler(
       AvailableCommands.AccountBalance,
-      (payload: ICustomEventMessageRequest) => {
+      async (payload: ICustomEventMessageRequest) => {
         const accountBalancePayload = payload.params as IAccountBalanceRequest;
         const respMessage = {
-          result: this.balance(accountBalancePayload),
+          result: await this.balance(accountBalancePayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
         // answer to the message target
-        (window.massaWalletProvider as EventTarget).dispatchEvent(
+        walletProviderEventTarget.dispatchEvent(
           new CustomEvent('message', { detail: respMessage }),
         );
       },
     );
     // ============================DELETE ACCOUNT============================
     (
-      window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
-      ] as EventTarget
+      document.getElementById(providerEventTargetName) as EventTarget
     ).addEventListener(
       AvailableCommands.ProviderDeleteAccount,
       (evt: CustomEvent) => {
@@ -113,20 +128,16 @@ export abstract class ContentScriptProvider {
 
     this.attachCallbackHandler(
       AvailableCommands.ProviderDeleteAccount,
-      (payload: ICustomEventMessageRequest) => {
+      async (payload: ICustomEventMessageRequest) => {
         const accountDeletionPayload =
           payload.params as IAccountDeletionRequest;
-        console.log(
-          'Provider deleting account payload',
-          accountDeletionPayload,
-        );
         const respMessage = {
-          result: this.deleteAccount(accountDeletionPayload),
+          result: await this.deleteAccount(accountDeletionPayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
         // answer to the message target
-        (window.massaWalletProvider as EventTarget).dispatchEvent(
+        walletProviderEventTarget.dispatchEvent(
           new CustomEvent('message', { detail: respMessage }),
         );
       },
@@ -134,9 +145,7 @@ export abstract class ContentScriptProvider {
 
     // =============================IMPORT ACCOUNT===================================
     (
-      window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
-      ] as EventTarget
+      document.getElementById(providerEventTargetName) as EventTarget
     ).addEventListener(
       AvailableCommands.ProviderImportAccount,
       (evt: CustomEvent) => {
@@ -149,24 +158,22 @@ export abstract class ContentScriptProvider {
 
     this.attachCallbackHandler(
       AvailableCommands.ProviderImportAccount,
-      (payload: ICustomEventMessageRequest) => {
+      async (payload: ICustomEventMessageRequest) => {
         const accountImportPayload = payload.params as IAccountImportRequest;
         const respMessage = {
-          result: this.importAccount(accountImportPayload),
+          result: await this.importAccount(accountImportPayload),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
         // answer to the message target
-        (window.massaWalletProvider as EventTarget).dispatchEvent(
+        walletProviderEventTarget.dispatchEvent(
           new CustomEvent('message', { detail: respMessage }),
         );
       },
     );
     // ==============================LIST ACCOUNTS==================================
     (
-      window[
-        `${MASSA_WINDOW_OBJECT_PRAEFIX}-${ContentScriptProvider.providerName}`
-      ] as EventTarget
+      document.getElementById(providerEventTargetName) as EventTarget
     ).addEventListener(
       AvailableCommands.ProviderListAccounts,
       (evt: CustomEvent) => {
@@ -179,14 +186,14 @@ export abstract class ContentScriptProvider {
 
     this.attachCallbackHandler(
       AvailableCommands.ProviderListAccounts,
-      (payload: ICustomEventMessageRequest) => {
+      async (payload: ICustomEventMessageRequest) => {
         const respMessage = {
-          result: this.listAccounts(),
+          result: await this.listAccounts(),
           error: null,
           requestId: payload.requestId,
         } as ICustomEventMessageResponse;
         // answer to the message target
-        (window.massaWalletProvider as EventTarget).dispatchEvent(
+        walletProviderEventTarget.dispatchEvent(
           new CustomEvent('message', { detail: respMessage }),
         );
       },
@@ -201,36 +208,60 @@ export abstract class ContentScriptProvider {
     this.actionToCallback.set(methodName, callback);
   }
 
-  public static registerAsMassaWalletProvider(
+  public static async registerAsMassaWalletProvider(
     providerName: string,
   ): Promise<boolean> {
     ContentScriptProvider.providerName = providerName;
-    return new Promise((resolve) => {
-      const registerProvider = () => {
-        if (!window.massaWalletProvider) {
-          return resolve(false);
+
+    return withTimeoutRejection<boolean>(
+      new Promise((resolve) => {
+        const registerProvider = () => {
+          if (!document.getElementById(MASSA_WINDOW_OBJECT)) {
+            return resolve(false);
+          }
+
+          // answer to the register target
+          const isRegisterEventSent = document
+            .getElementById(MASSA_WINDOW_OBJECT)
+            .dispatchEvent(
+              new CustomEvent('register', {
+                detail: {
+                  providerName: providerName,
+                  eventTarget: providerName,
+                } as IRegisterEvent,
+              }),
+            );
+          return resolve(isRegisterEventSent);
+        };
+
+        if (
+          document.readyState === 'complete' ||
+          document.readyState === 'interactive'
+        ) {
+          registerProvider();
+        } else {
+          document.addEventListener('DOMContentLoaded', registerProvider);
         }
-
-        // answer to the register target
-        window.massaWalletProvider.dispatchEvent(
-          new CustomEvent('register', {
-            detail: {
-              providerName: providerName,
-              eventTarget: providerName,
-            } as IRegisterEvent,
-          }),
-        );
-        return resolve(true);
-      };
-
-      if (
-        document.readyState === 'complete' ||
-        document.readyState === 'interactive'
-      ) {
-        registerProvider();
-      } else {
-        document.addEventListener('DOMContentLoaded', registerProvider);
-      }
-    });
+      }),
+      5000,
+    );
   }
+}
+
+async function withTimeoutRejection<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  const sleep = new Promise((resolve, reject) =>
+    setTimeout(
+      () =>
+        reject(
+          new Error(
+            `Timeout of ${timeoutMs} has passed and promise did not resolve`,
+          ),
+        ),
+      timeoutMs,
+    ),
+  );
+  return Promise.race([promise, sleep]) as Promise<T>;
 }
