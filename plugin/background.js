@@ -35,8 +35,15 @@ class MassaSpaceWalletImpl {
       else
           fromExtension = sender.envType === 'addon_child' && sender.id === browser.runtime.id;
 
-      if (request.action === "getBalance") {
+      if (request.action === "balance") {
         return { balance: "1234.5"}
+      } else if (request.action === "sign") {
+        return {
+          pubKey: '0x0000',
+          signature: Uint8Array.from([1, 2, 3]),
+        }
+      } else if (request.action === "listAccounts") {
+        return [{ name: 'my account', address: '0x0' }];
       } else {
         return undefined;
       }

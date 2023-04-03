@@ -14,12 +14,13 @@
   },{}],2:[function(require,module,exports){
   "use strict";
   Object.defineProperty(exports, "__esModule", { value: true });
-  exports.ContentScriptProvider = void 0;
+  exports.registerAndInitProvider = exports.ContentScriptProvider = void 0;
   const Commands_1 = require("./Commands");
   const MASSA_WINDOW_OBJECT = 'massaWalletProvider';
   // =========================================================
   class ContentScriptProvider {
-      constructor() {
+      constructor(providerName) {
+          this.providerName = providerName;
           this.actionToCallback = new Map();
           this.attachCallbackHandler = this.attachCallbackHandler.bind(this);
           this.sign = this.sign.bind(this);
@@ -28,7 +29,7 @@
           this.importAccount = this.importAccount.bind(this);
           this.listAccounts = this.listAccounts.bind(this);
           // this is the current provider html element
-          const providerEventTargetName = `${MASSA_WINDOW_OBJECT}_${ContentScriptProvider.providerName}`;
+          const providerEventTargetName = `${MASSA_WINDOW_OBJECT}_${this.providerName}`;
           if (!document.getElementById(providerEventTargetName)) {
               const inv = document.createElement('p');
               inv.id = providerEventTargetName;
@@ -121,7 +122,6 @@
           this.actionToCallback.set(methodName, callback);
       }
       static async registerAsMassaWalletProvider(providerName) {
-          ContentScriptProvider.providerName = providerName;
           return withTimeoutRejection(new Promise((resolve) => {
               const registerProvider = () => {
                   if (!document.getElementById(MASSA_WINDOW_OBJECT)) {
@@ -153,13 +153,22 @@
       const sleep = new Promise((resolve, reject) => setTimeout(() => reject(new Error(`Timeout of ${timeoutMs} has passed and promise did not resolve`)), timeoutMs));
       return Promise.race([promise, sleep]);
   }
+  async function registerAndInitProvider(Clazz, providerName) {
+      const isProviderRegistered = await ContentScriptProvider.registerAsMassaWalletProvider(providerName);
+      // create an instance of the extension for communication
+      if (isProviderRegistered) {
+          new Clazz(providerName);
+      }
+  }
+  exports.registerAndInitProvider = registerAndInitProvider;
   
   },{"./Commands":1}],3:[function(require,module,exports){
   "use strict";
   Object.defineProperty(exports, "__esModule", { value: true });
-  exports.ContentScriptProvider = void 0;
+  exports.registerAndInitProvider = exports.ContentScriptProvider = void 0;
   var ContentScriptProvider_1 = require("./ContentScriptProvider");
   Object.defineProperty(exports, "ContentScriptProvider", { enumerable: true, get: function () { return ContentScriptProvider_1.ContentScriptProvider; } });
+  Object.defineProperty(exports, "registerAndInitProvider", { enumerable: true, get: function () { return ContentScriptProvider_1.registerAndInitProvider; } });
   
   },{"./ContentScriptProvider":2}],4:[function(require,module,exports){
   "use strict";

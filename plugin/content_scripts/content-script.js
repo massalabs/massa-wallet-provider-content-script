@@ -11,7 +11,7 @@ const WALLET_PROVIDER_NAME = "SPACE_X";
     let mybrowser = IS_CHROME ? chrome : browser;
 
 
-    // ==================== EXTENSION LOGIC =====================
+    // ==================== EXTENSION CONTENT-SCRIPT LOGIC =====================
     class WalletContentScriptProvider extends window.injected.ContentScriptProvider {
         // own members and functionalities for convenience
         constructor(providerName) {
@@ -19,15 +19,17 @@ const WALLET_PROVIDER_NAME = "SPACE_X";
         }
 
         async sign(payload) {
-            return {
-                pubKey: '0x0000',
-                signature: Uint8Array.from([1, 2, 3]),
-            }
+            return new Promise((resolve, reject) => {
+              // send a message to background.js and await its response
+              mybrowser.runtime.sendMessage({action: "sign", params: payload}, (response) => {
+                  return resolve(response)
+              });
+          })
         }
         async balance(payload) {
             return new Promise((resolve, reject) => {
-                mybrowser.runtime.sendMessage({action: "getBalance", params: payload}, (response) => {
-                    console.log("Got a response from background.js", response);
+              // send a message to background.js and await its response
+                mybrowser.runtime.sendMessage({action: "balance", params: payload}, (response) => {
                     return resolve(response)
                 });
             })
@@ -40,20 +42,21 @@ const WALLET_PROVIDER_NAME = "SPACE_X";
         async importAccount(payload) {
             return {
                 response: window.injected.EAccountImportResponse.OK,
-                message: 'Import was fine',
+                message: 'Account successfully imported',
             }
         }
         async listAccounts(payload) {
-            return [{ name: 'my account', address: '0x0' }];
+          return new Promise((resolve, reject) => {
+            // send a message to background.js and await its response
+              mybrowser.runtime.sendMessage({action: "listAccounts", params: payload}, (response) => {
+                  return resolve(response)
+              });
+          })
         }
     }
 
     // ==================== REGISTRATION =====================
-    const isProviderRegistered = await window.injected.ContentScriptProvider.registerAsMassaWalletProvider(WALLET_PROVIDER_NAME);
-    console.log("[CONTENT SCRIPT] Is provider registered ", isProviderRegistered);
-
-    // create an instance of the extension for communication
-    const walletExtension = new WalletContentScriptProvider(WALLET_PROVIDER_NAME);
+    await window.injected.registerAndInitProvider(WalletContentScriptProvider, WALLET_PROVIDER_NAME);
 
   })();
   

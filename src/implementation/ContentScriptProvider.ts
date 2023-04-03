@@ -23,7 +23,7 @@ type CallbackFunction = (evt: ICustomEventMessageRequest) => void;
 // =========================================================
 
 export abstract class ContentScriptProvider {
-  private static providerName: string;
+  private providerName: string;
   private actionToCallback: Map<string, CallbackFunction>;
 
   public abstract sign(payload: IAccountSignRequest): IAccountSignResponse;
@@ -38,7 +38,8 @@ export abstract class ContentScriptProvider {
   ): IAccountImportResponse;
   public abstract listAccounts(): IAccount[];
 
-  public constructor() {
+  public constructor(providerName: string) {
+    this.providerName = providerName;
     this.actionToCallback = new Map<string, CallbackFunction>();
     this.attachCallbackHandler = this.attachCallbackHandler.bind(this);
 
@@ -49,7 +50,7 @@ export abstract class ContentScriptProvider {
     this.listAccounts = this.listAccounts.bind(this);
 
     // this is the current provider html element
-    const providerEventTargetName = `${MASSA_WINDOW_OBJECT}_${ContentScriptProvider.providerName}`;
+    const providerEventTargetName = `${MASSA_WINDOW_OBJECT}_${this.providerName}`;
     if (!document.getElementById(providerEventTargetName)) {
       const inv = document.createElement('p');
       inv.id = providerEventTargetName;
@@ -211,8 +212,6 @@ export abstract class ContentScriptProvider {
   public static async registerAsMassaWalletProvider(
     providerName: string,
   ): Promise<boolean> {
-    ContentScriptProvider.providerName = providerName;
-
     return withTimeoutRejection<boolean>(
       new Promise((resolve) => {
         const registerProvider = () => {
@@ -264,4 +263,16 @@ async function withTimeoutRejection<T>(
     ),
   );
   return Promise.race([promise, sleep]) as Promise<T>;
+}
+
+export async function registerAndInitProvider<T extends ContentScriptProvider>(
+  Clazz: new (providerName: string) => T,
+  providerName: string,
+): Promise<void> {
+  const isProviderRegistered =
+    await ContentScriptProvider.registerAsMassaWalletProvider(providerName);
+  // create an instance of the extension for communication
+  if (isProviderRegistered) {
+    new Clazz(providerName);
+  }
 }

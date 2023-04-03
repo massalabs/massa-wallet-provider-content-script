@@ -1,1 +1,4 @@
-export { ContentScriptProvider } from './ContentScriptProvider';
+export {
+  ContentScriptProvider,
+  registerAndInitProvider,
+} from './ContentScriptProvider';
