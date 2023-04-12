@@ -1,5 +1,5 @@
 let IS_CHROME = /Chrome/.test(navigator.userAgent);
-let mybrowser = IS_CHROME ? chrome : browser;
+let mybrowser =  chrome;
 
 
 // THIS IS THE INTERNAL WALLET FUNCTIONALITY (CONTROLLERS, STORAGE ETC.)

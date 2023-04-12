@@ -7,8 +7,7 @@ const WALLET_PROVIDER_NAME = "SPACE_X";
         return;
     window.hasRun = true;
     
-    let IS_CHROME = /Chrome/.test(navigator.userAgent);
-    let mybrowser = IS_CHROME ? chrome : browser;
+    let mybrowser = chrome;
 
 
     // ==================== EXTENSION CONTENT-SCRIPT LOGIC =====================

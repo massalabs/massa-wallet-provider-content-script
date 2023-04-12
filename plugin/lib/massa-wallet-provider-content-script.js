@@ -18,6 +18,12 @@
   const Commands_1 = require("./Commands");
   const MASSA_WINDOW_OBJECT = 'massaWalletProvider';
   // =========================================================
+  const detailWrapper = (detail) => {
+      if (typeof cloneInto === 'function') {
+          return cloneInto(detail, window);
+      }
+      return detail;
+  };
   class ContentScriptProvider {
       constructor(providerName) {
           this.providerName = providerName;
@@ -55,7 +61,7 @@
                   requestId: payload.requestId,
               };
               // answer to the message target
-              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', { detail: respMessage }));
+              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', detailWrapper({ detail: respMessage })));
           });
           // ===========================BALANCE============================
           document.getElementById(providerEventTargetName).addEventListener(Commands_1.AvailableCommands.AccountBalance, (evt) => {
@@ -70,7 +76,7 @@
                   requestId: payload.requestId,
               };
               // answer to the message target
-              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', { detail: respMessage }));
+              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', detailWrapper({ detail: respMessage })));
           });
           // ============================DELETE ACCOUNT============================
           document.getElementById(providerEventTargetName).addEventListener(Commands_1.AvailableCommands.ProviderDeleteAccount, (evt) => {
@@ -85,7 +91,7 @@
                   requestId: payload.requestId,
               };
               // answer to the message target
-              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', { detail: respMessage }));
+              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', detailWrapper({ detail: respMessage })));
           });
           // =============================IMPORT ACCOUNT===================================
           document.getElementById(providerEventTargetName).addEventListener(Commands_1.AvailableCommands.ProviderImportAccount, (evt) => {
@@ -100,7 +106,7 @@
                   requestId: payload.requestId,
               };
               // answer to the message target
-              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', { detail: respMessage }));
+              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', detailWrapper({ detail: respMessage })));
           });
           // ==============================LIST ACCOUNTS==================================
           document.getElementById(providerEventTargetName).addEventListener(Commands_1.AvailableCommands.ProviderListAccounts, (evt) => {
@@ -114,7 +120,7 @@
                   requestId: payload.requestId,
               };
               // answer to the message target
-              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', { detail: respMessage }));
+              walletProviderEventTarget.dispatchEvent(new CustomEvent('message', detailWrapper({ detail: respMessage })));
           });
           // ================================================================
       }
@@ -130,12 +136,12 @@
                   // answer to the register target
                   const isRegisterEventSent = document
                       .getElementById(MASSA_WINDOW_OBJECT)
-                      .dispatchEvent(new CustomEvent('register', {
+                      .dispatchEvent(new CustomEvent('register', detailWrapper({
                       detail: {
                           providerName: providerName,
                           eventTarget: providerName,
                       },
-                  }));
+                  })));
                   return resolve(isRegisterEventSent);
               };
               if (document.readyState === 'complete' ||

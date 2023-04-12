@@ -16,11 +16,19 @@ import {
   IAccount,
 } from '../interfaces';
 
+declare function cloneInto<T>(object: T, targetScope: any): T;
+
 const MASSA_WINDOW_OBJECT = 'massaWalletProvider';
 
 type CallbackFunction = (evt: ICustomEventMessageRequest) => void;
 
 // =========================================================
+const detailWrapper = (detail) => {
+  if (typeof cloneInto === 'function') {
+    return cloneInto(detail, window);
+  }
+  return detail;
+};
 
 export abstract class ContentScriptProvider {
   private providerName: string;
@@ -86,7 +94,7 @@ export abstract class ContentScriptProvider {
         } as ICustomEventMessageResponse;
         // answer to the message target
         walletProviderEventTarget.dispatchEvent(
-          new CustomEvent('message', { detail: respMessage }),
+          new CustomEvent('message', detailWrapper({ detail: respMessage })),
         );
       },
     );
@@ -110,7 +118,7 @@ export abstract class ContentScriptProvider {
         } as ICustomEventMessageResponse;
         // answer to the message target
         walletProviderEventTarget.dispatchEvent(
-          new CustomEvent('message', { detail: respMessage }),
+          new CustomEvent('message', detailWrapper({ detail: respMessage })),
         );
       },
     );
@@ -139,7 +147,7 @@ export abstract class ContentScriptProvider {
         } as ICustomEventMessageResponse;
         // answer to the message target
         walletProviderEventTarget.dispatchEvent(
-          new CustomEvent('message', { detail: respMessage }),
+          new CustomEvent('message', detailWrapper({ detail: respMessage })),
         );
       },
     );
@@ -168,7 +176,7 @@ export abstract class ContentScriptProvider {
         } as ICustomEventMessageResponse;
         // answer to the message target
         walletProviderEventTarget.dispatchEvent(
-          new CustomEvent('message', { detail: respMessage }),
+          new CustomEvent('message', detailWrapper({ detail: respMessage })),
         );
       },
     );
@@ -195,7 +203,7 @@ export abstract class ContentScriptProvider {
         } as ICustomEventMessageResponse;
         // answer to the message target
         walletProviderEventTarget.dispatchEvent(
-          new CustomEvent('message', { detail: respMessage }),
+          new CustomEvent('message', detailWrapper({ detail: respMessage })),
         );
       },
     );
@@ -223,12 +231,15 @@ export abstract class ContentScriptProvider {
           const isRegisterEventSent = document
             .getElementById(MASSA_WINDOW_OBJECT)
             .dispatchEvent(
-              new CustomEvent('register', {
-                detail: {
-                  providerName: providerName,
-                  eventTarget: providerName,
-                } as IRegisterEvent,
-              }),
+              new CustomEvent(
+                'register',
+                detailWrapper({
+                  detail: {
+                    providerName: providerName,
+                    eventTarget: providerName,
+                  } as IRegisterEvent,
+                }),
+              ),
             );
           return resolve(isRegisterEventSent);
         };
